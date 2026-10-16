@@ -20,4 +20,14 @@ class DaliurenTest {
         assertEquals("子", ((Map<?, ?>) before.get("dateInfo")).get("yueJiang"));
         assertEquals("亥", ((Map<?, ?>) after.get("dateInfo")).get("yueJiang"));
     }
+
+    @Test void lateZiUsesNextDay() throws Exception {
+        Map<String, Object> lateZi = Daliuren.calculate(Map.of(
+                "date", "2026-04-10", "hour", 23, "minute", 30, "timezone", "Asia/Shanghai"));
+        Map<String, Object> nextDay = Daliuren.calculate(Map.of(
+                "date", "2026-04-11", "hour", 0, "minute", 30, "timezone", "Asia/Shanghai"));
+        assertEquals(
+                ((Map<?, ?>) nextDay.get("dateInfo")).get("ganZhi"),
+                ((Map<?, ?>) lateZi.get("dateInfo")).get("ganZhi"));
+    }
 }
