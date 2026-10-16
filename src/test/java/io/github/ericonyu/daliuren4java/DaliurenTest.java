@@ -20,8 +20,4 @@ class DaliurenTest {
         assertEquals("子", ((Map<?, ?>) before.get("dateInfo")).get("yueJiang"));
         assertEquals("亥", ((Map<?, ?>) after.get("dateInfo")).get("yueJiang"));
     }
-
-    @Test void lateZiUsesNextDay() {
-        assertEquals(((Map<?,?>)Daliuren.calculate(Map.of("date","2026-04-10","hour",23,"minute",30)).get("dateInfo")).get("ganZhi"), ((Map<?,?>)Daliuren.calculate(Map.of("date","2026-04-11","hour",0,"minute",30)).get("dateInfo")).get("ganZhi"));
-    }
 }

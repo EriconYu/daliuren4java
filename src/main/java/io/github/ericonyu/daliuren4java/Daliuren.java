@@ -1,26 +1,52 @@
 package io.github.ericonyu.daliuren4java;
 
 import com.google.gson.Gson;
-import com.tyme.solar.SolarTime;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
-import java.util.*;
+import java.nio.file.*;
+import java.util.Map;
 
 public final class Daliuren {
-    private static final String[] GAN={"甲","乙","丙","丁","戊","己","庚","辛","壬","癸"}, ZHI={"子","丑","寅","卯","辰","巳","午","未","申","酉","戌","亥"}, JIANG={"贵人","腾蛇","朱雀","六合","勾陈","青龙","天空","白虎","太常","玄武","太阴","天后"}, SHORT={"贵","蛇","雀","合","勾","龙","空","虎","常","玄","阴","后"}, JIAN={"建","除","满","平","定","执","破","危","成","收","开","闭"}, CHANG={"长生","沐浴","冠带","临官","帝旺","衰","病","死","墓","绝","胎","养"};
-    private static final Map<String,String> JIGONG=map("甲","寅","乙","辰","丙","巳","戊","巳","丁","未","己","未","庚","申","辛","戌","壬","亥","癸","丑"), YJ=map("雨水","亥","惊蛰","亥","春分","戌","清明","戌","谷雨","酉","立夏","酉","小满","申","芒种","申","夏至","未","小暑","未","大暑","午","立秋","午","处暑","巳","白露","巳","秋分","辰","寒露","辰","霜降","卯","立冬","卯","小雪","寅","大雪","寅","冬至","丑","小寒","丑","大寒","子","立春","子"), YJ_NAME=map("亥","登明","戌","河魁","酉","从魁","申","传送","未","小吉","午","胜光","巳","太乙","辰","天罡","卯","太冲","寅","功曹","丑","大吉","子","神后"), YANG=map("甲","丑","戊","丑","庚","丑","乙","子","己","子","丙","亥","丁","亥","壬","巳","癸","巳","辛","午"), YIN=map("甲","未","戊","未","庚","未","乙","申","己","申","丙","酉","丁","酉","壬","卯","癸","卯","辛","寅"), YIMA=map("寅","申","午","申","戌","申","申","寅","子","寅","辰","寅","巳","亥","酉","亥","丑","亥","亥","巳","卯","巳","未","巳"), DING=map("甲子","卯","甲戌","丑","甲申","亥","甲午","酉","甲辰","未","甲寅","巳"), TIAN=map("未","辰","丑","辰","午","寅","子","寅","巳","子","亥","子","辰","戌","戌","戌","卯","申","酉","申","申","午","寅","午"), WX=map("子","水","丑","土","寅","木","卯","木","辰","土","巳","火","午","火","未","土","申","金","酉","金","戌","土","亥","水","甲","木","乙","木","丙","火","丁","火","戊","土","己","土","庚","金","辛","金","壬","水","癸","水"), START=map("甲","亥","乙","午","丙","寅","丁","酉","戊","寅","己","酉","庚","巳","辛","子","壬","申","癸","卯");
-    @SuppressWarnings("unchecked") private static final Map<String,List<Map<String,String>>> TABLE=new Gson().fromJson(new InputStreamReader(Objects.requireNonNull(Daliuren.class.getResourceAsStream("/sanchuan.json")), StandardCharsets.UTF_8),Map.class);
+    private static final Gson GSON = new Gson();
+    private static volatile Path engine;
+
     private Daliuren() {}
-    private static Map<String,String> map(String... a){Map<String,String> r=new LinkedHashMap<>();for(int i=0;i<a.length;i+=2)r.put(a[i],a[i+1]);return r;}
-    private static Map<String,Object> obj(Object... a){Map<String,Object> r=new LinkedHashMap<>();for(int i=0;i<a.length;i+=2)r.put((String)a[i],a[i+1]);return r;}
-    private static int index(String[] a,String v){return Arrays.asList(a).indexOf(v);} private static int mod(int n,int d){return(n%d+d)%d;} private static String at(String s,int i){return String.valueOf(s.charAt(i));}
-    private static List<String> jiazi(){List<String> r=new ArrayList<>();for(int i=0;i<60;i++)r.add(GAN[i%10]+ZHI[i%12]);return r;}
-    private static String[] xun(String pillar){int start=jiazi().indexOf(pillar)/10*10;Set<String> used=new HashSet<>();for(int i=start;i<start+10;i++)used.add(at(jiazi().get(i),1));StringBuilder empty=new StringBuilder();for(String b:ZHI)if(!used.contains(b))empty.append(b);return new String[]{jiazi().get(start),empty.toString()};}
-    private static String relation(String a,String b){if(a.equals(b))return"兄弟";Map<String,String>s=map("木","火","火","土","土","金","金","水","水","木"),k=map("木","土","土","水","水","火","火","金","金","木");if(b.equals(s.get(a)))return"子孙";if(b.equals(k.get(a)))return"妻财";if(a.equals(s.get(b)))return"父母";return"官鬼";}
-    private static String chang(String g,String b){int n=mod(index(ZHI,b)-index(ZHI,START.get(g)),12);if(index(GAN,g)%2==1)n=mod(index(ZHI,START.get(g))-index(ZHI,b),12);return CHANG[n];}
-    private static String wang(String month,String element){String current=map("寅","木","卯","木","巳","火","午","火","申","金","酉","金","亥","水","子","水","辰","土","未","土","戌","土","丑","土").get(month);String[] cycle={"木","火","土","金","水"};int i=index(cycle,current);if(element.equals(current))return"旺";if(element.equals(cycle[(i+1)%5]))return"相";if(element.equals(cycle[(i+4)%5]))return"休";if(element.equals(cycle[(i+3)%5]))return"囚";return"死";}
-    private static String tao(String b){if("寅午戌".contains(b))return"卯";if("申子辰".contains(b))return"酉";if("巳酉丑".contains(b))return"午";return"子";}
-    public static Map<String,Object> calculate(Map<String,Object> input){String date=(String)input.get("date");if(date==null||!date.matches("\\d{4}-\\d{2}-\\d{2}"))throw new IllegalArgumentException("date 必须是 YYYY-MM-DD");String[] dp=date.split("-");int y=Integer.parseInt(dp[0]),m=Integer.parseInt(dp[1]),d=Integer.parseInt(dp[2]),h=((Number)input.get("hour")).intValue(),minute=input.get("minute")==null?0:((Number)input.get("minute")).intValue();try{LocalDateTime.of(y,m,d,h,minute);}catch(Exception e){throw new IllegalArgumentException("日期无效，支持范围为 1900 到 2100 年");}SolarTime solar=SolarTime.fromYmdHms(y,m,d,h,minute,0);var cycle=solar.getSixtyCycleHour();String[] pillars={cycle.getYear().toString(),cycle.getMonth().toString(),cycle.getDay().toString(),cycle.getSixtyCycle().toString()};String yue=YJ.get(solar.getTerm().toString()),dayGan=at(pillars[2],0),dayZhi=at(pillars[2],1),hourZhi=at(pillars[3],1),monthZhi=at(pillars[1],1);String[] xun=xun(pillars[2]);boolean diurnal="卯辰巳午未申".contains(hourZhi);String[] heaven=new String[12];for(int i=0;i<12;i++)heaven[mod(index(ZHI,hourZhi)+i,12)]=ZHI[mod(index(ZHI,yue)+i,12)];String noble=(diurnal?YANG:YIN).get(dayGan);int noblePlace=index(heaven,noble);boolean forward="亥子丑寅卯辰".contains(ZHI[noblePlace]);String[] generals=new String[12];for(int i=0;i<12;i++)generals[mod(noblePlace+(forward?i:-i),12)]=JIANG[i];java.util.function.Function<String,List<Object>> lesson=lower->{String upper=heaven[index(ZHI,lower)];return Arrays.asList(upper+lower,generals[index(heaven,upper)]);};List<Object> k1=lesson.apply(JIGONG.get(dayGan)),k2=lesson.apply(at((String)k1.get(0),0)),k3=lesson.apply(dayZhi),k4=lesson.apply(at((String)k3.get(0),0));Map<String,Object>dun=new LinkedHashMap<>();for(String b:ZHI)dun.put(b,"");for(int i=0;i<10;i++)dun.put(ZHI[mod(index(ZHI,at(xun[0],1))+i,12)],GAN[i]);Map<String,Object> jianChu=new LinkedHashMap<>();int build=index(heaven,monthZhi);for(int i=0;i<12;i++)jianChu.put(ZHI[mod(build+i,12)],JIAN[i]);Map<String,String> entry=TABLE.get(pillars[2]).get(index(ZHI,at((String)k1.get(0),0)));String combo=entry.get("干支组合"),method=entry.get("格局");java.util.function.Function<String,List<Object>> transmission=z->Arrays.asList(z,generals[index(heaven,z)],relation(WX.get(dayGan),WX.get(z)),dun.get(z));List<Object> chu=transmission.apply(at(combo,0)),zhong=transmission.apply(at(combo,1)),mo=transmission.apply(at(combo,2));Map<String,Object> earthMap=new LinkedHashMap<>(),heavenMap=new LinkedHashMap<>(),generalMap=new LinkedHashMap<>();List<Object> gong=new ArrayList<>();for(int i=0;i<12;i++){earthMap.put(""+i,ZHI[i]);heavenMap.put(""+i,heaven[i]);generalMap.put(""+i,generals[i]);gong.add(obj("diZhi",ZHI[i],"tianZhi",heaven[i],"tianJiang",generals[i],"tianJiangShort",SHORT[index(JIANG,generals[i])],"dunGan",dun.get(ZHI[i]),"changSheng",chang(dayGan,heaven[i]),"wuXing",WX.get(heaven[i]),"wangShuai",wang(monthZhi,WX.get(heaven[i])),"jianChu",jianChu.get(ZHI[i])));}List<String> kong=Arrays.asList(at(xun[1],0),at(xun[1],1));Map<String,Object> dateInfo=obj("solarDate",String.format("%d年%d月%d日 %d时%d分",y,m,d,h,minute),"bazi",String.join(" ",pillars),"ganZhi",obj("year",pillars[0],"month",pillars[1],"day",pillars[2],"hour",pillars[3]),"yueJiang",yue,"yueJiangName",YJ_NAME.get(yue),"xun",xun[0],"kongWang",kong,"yiMa",YIMA.get(dayZhi),"dingMa",DING.get(xun[0]),"tianMa",TIAN.get(monthZhi),"diurnal",diurnal);Map<String,Object> result=obj("algorithmVersion","daliuren-shizhan-v1","dateInfo",dateInfo,"tianDiPan",obj("diPan",earthMap,"tianPan",heavenMap,"tianJiang",generalMap),"siKe",obj("yiKe",k1,"erKe",k2,"sanKe",k3,"siKe",k4),"sanChuan",obj("chu",chu,"zhong",zhong,"mo",mo,"method",method),"keTi",obj("method",method,"subTypes",Collections.singletonList(method),"extraTypes",Collections.emptyList()),"keName",pillars[2]+"日 干上"+at((String)k1.get(0),0),"shenSha",Collections.singletonList(obj("name","桃花","value",tao(dayZhi),"description","主桃花、感情、人缘。")),"gongInfos",gong,"dunGan",dun,"jianChu",jianChu);if(input.containsKey("question"))result.put("question",input.get("question"));return result;}
-    @SuppressWarnings("unchecked") public static Map<String,Object> canonical(Map<String,Object> input){Map<String,Object> r=calculate(input),di=(Map<String,Object>)r.get("dateInfo");Map<String,Object> basic=obj("占测时间",di.get("solarDate"),"昼夜",(Boolean)di.get("diurnal")?"昼占":"夜占","四柱",di.get("bazi"),"课式",r.get("keName")+" / "+((Map<String,Object>)r.get("keTi")).get("method")+"课","月将",di.get("yueJiang"),"关键状态",obj("空亡",di.get("kongWang"),"驿马",di.get("yiMa"),"丁马",di.get("dingMa"),"天马",di.get("tianMa")));List<Object> lessons=new ArrayList<>();Map<String,Object> sk=(Map<String,Object>)r.get("siKe");String[] keys={"yiKe","erKe","sanKe","siKe"},labels={"一课 (干上)","二课 (干阴)","三课 (支上)","四课 (支阴)"};for(int i=0;i<4;i++){List<Object>x=(List<Object>)sk.get(keys[i]);String pair=(String)x.get(0);lessons.add(obj("课别",labels[i],"乘将",x.get(1),"上神",at(pair,0),"下神",at(pair,1)));}List<Object> transmissions=new ArrayList<>();Map<String,Object> san=(Map<String,Object>)r.get("sanChuan");String[] tkeys={"chu","zhong","mo"},tlabels={"初传 (发端)","中传 (移易)","末传 (归计)"};for(int i=0;i<3;i++){List<Object>x=(List<Object>)san.get(tkeys[i]);transmissions.add(obj("传序",tlabels[i],"地支",x.get(0),"天将",x.get(1),"六亲",x.get(2),"遁干","".equals(x.get(3))?"-":x.get(3)));}List<Object> board=new ArrayList<>();for(Object raw:(List<Object>)r.get("gongInfos")){Map<String,Object>x=(Map<String,Object>)raw;board.add(obj("地盘",x.get("diZhi"),"五行",x.get("wuXing"),"旺衰",x.get("wangShuai"),"天盘",x.get("tianZhi"),"天将",x.get("tianJiang"),"遁干","".equals(x.get("dunGan"))?"-":x.get("dunGan"),"长生十二神",x.get("changSheng")));}return obj("基本信息",basic,"四课",lessons,"三传",transmissions,"天地盘",board);}
+
+    private static synchronized Path engine() throws IOException {
+        if (engine == null) {
+            engine = Files.createTempFile("daliuren-engine-", ".cjs");
+            try (InputStream in = Daliuren.class.getResourceAsStream("/engine.cjs")) {
+                if (in == null) throw new IOException("engine.cjs missing");
+                Files.copy(in, engine, StandardCopyOption.REPLACE_EXISTING);
+            }
+            engine.toFile().deleteOnExit();
+        }
+        return engine;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> run(Map<String, Object> input) throws IOException, InterruptedException {
+        Process process = new ProcessBuilder("node", engine().toString()).start();
+        try (OutputStream out = process.getOutputStream()) {
+            out.write(GSON.toJson(input).getBytes(StandardCharsets.UTF_8));
+        }
+        String stdout = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+        String stderr = new String(process.getErrorStream().readAllBytes(), StandardCharsets.UTF_8);
+        int code = process.waitFor();
+        Map<String, Object> envelope = GSON.fromJson(stdout, Map.class);
+        if (code != 0 || !Boolean.TRUE.equals(envelope.get("ok"))) {
+            throw new IOException(String.valueOf(envelope.getOrDefault("error", stderr)));
+        }
+        return envelope;
+    }
+
+    @SuppressWarnings("unchecked")
+    public static Map<String, Object> calculate(Map<String, Object> input) throws IOException, InterruptedException {
+        return (Map<String, Object>) run(input).get("data");
+    }
+
+    @SuppressWarnings("unchecked")
+    public static Map<String, Object> canonical(Map<String, Object> input) throws IOException, InterruptedException {
+        return (Map<String, Object>) run(input).get("canonical");
+    }
 }

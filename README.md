@@ -1,6 +1,6 @@
 # daliuren4java
 
-Java 原生大六壬排盘 SDK，历法使用 `tyme4j`，JAR 内置三传规则表。要求 Java 11+，运行时不依赖 Node.js 或其他语言。
+Java 大六壬排盘 SDK，JAR 内置经过版本锁定的排盘引擎。要求 Java 11+ 和 Node.js 20+。
 
 ```java
 Map<String, Object> input = Map.of(
